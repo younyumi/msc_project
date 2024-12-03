@@ -19,11 +19,12 @@ class Controller(object):
         self.error_prev =0
         self.dt = 0.1 
     
-    def update(self,x,y,yaw,speed):
+    def update(self,x,y,yaw,speed,steering_angle):
         self.x = x
         self.y = y
         self.yaw = yaw
         self.speed = speed
+        self.steering_angle = steering_angle
         
     def control(self):
         steer = self.control_steer()
@@ -58,12 +59,13 @@ class Controller(object):
         x,y = np.matmul(rotation_matrix, look_ahead_point)
             
         steer =-(1/self.max_steer_angle)*np.arctan2(2*self.wheelbase*y, x*x+y*y)
+        
         return steer
         
 def vehicle_data_callback(data):
-    global Controller
-    x,y,yaw,speed = data.data[0], data.data[1], data.data[2],data.data[3]
-    controller.update(x,y,yaw,speed)
+    global controller
+    x,y,yaw,speed,steering_angle = data.data[0], data.data[1], data.data[2],data.data[3], data.data[4]
+    controller.update(x,y,yaw,speed, steering_angle)
     throttle,steer,brake = controller.control()
             
     control_msg = Vector3Stamped()
@@ -71,9 +73,10 @@ def vehicle_data_callback(data):
     control_msg.vector.x = throttle
     control_msg.vector.y = steer
     control_msg.vector.z = brake
+    
     control_publisher.publish(control_msg)
             
-    rospy.loginfo("Pubishing Vector3Stanped data:throttle=%s, steer=%s, brake=%s", 
+    rospy.loginfo("Pubishing Vector3Stamped data:throttle=%s, steer=%s, brake=%s", 
                   control_msg.vector.x, control_msg.vector.y, control_msg.vector.z)
         
 def main():
@@ -93,6 +96,3 @@ def main():
         
 if __name__=='__main__':
     main()
-            
-    
-            
