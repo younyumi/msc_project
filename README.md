@@ -1,1 +1,2 @@
-# msc_project
+# My MSc Project
+
