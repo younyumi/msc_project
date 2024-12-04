@@ -1,103 +1,152 @@
 #!/usr/bin/env python3
 import rospy
-import math
-import pandas as pd
 import numpy as np
+import pandas as pd
+from scipy.optimize import minimize
 from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import Vector3Stamped
-from scipy.optimize import minimize
 
-class MPCNode:
-    def __init__(self):
-        self.cur_x = 0
-        self.cur_y = 0
-        self.cur_theta = 0
-        self.cur_vel = 0
-        self.cur_steer = 0
-        self.Path = []
+class MPCController:
+    def __init__(self, ref_path):
+        # Load reference path
+        self.ref = pd.read_csv(ref_path, header=None).values
 
-        rospy.Subscriber('/mobile_system_control/ego_vehicle', Float32MultiArray, self.callback, queue_size=10)
+        # Vehicle parameters
+        self.wheelbase = 1.023
+        self.dt = 0.1  # Time step
+        self.Np = 10  # Prediction horizon
+        self.max_steer_angle = np.pi / 4
+        self.min_steer_angle = -np.pi / 4
+        self.max_vel = 4.0
+        self.min_vel = 0.0
 
-        self.pub_msg = rospy.Publisher('/mobile_system_control/control_msg', Vector3Stamped, queue_size=10)
+        # MPC cost matrices
+        self.Q = np.diag([1, 1, 10])  # State cost
+        self.R = np.diag([10, 0.5])   # Input cost
 
-        self.x_ref = []
-        self.y_ref = []
-        self.theta_ref = 0
-        csv_file_Path = 'reference_path.csv'  # 경로 파일 경로
-        df = pd.read_csv(csv_file_Path)
-        matrix = df.to_numpy()
+        # Current state
+        self.x = 0
+        self.y = 0
+        self.yaw = 0
+        self.speed = 0
+        self.steering_angle = 0
+        self.target_speed = 20.0 / 3.6  # Target speed in m/s
 
-        for i in range(len(matrix)):
-            x_Point = matrix[i][0]
-            y_Point = matrix[i][1]
-            self.x_ref.append(x_Point)
-            self.y_ref.append(y_Point)
+    def update(self, x, y, yaw, speed, steering_angle):
+        """Update the current state of the vehicle."""
+        self.x = x
+        self.y = y
+        self.yaw = yaw
+        self.speed = speed
+        self.steering_angle = steering_angle
 
-    def callback(self, msg):
-        self.cur_x = msg.data[0]
-        self.cur_y = msg.data[1]
-        self.cur_theta = msg.data[2]
-        self.cur_vel = msg.data[3]
-        self.cur_steer = msg.data[4]
-        self.cur_pos = [self.cur_x, self.cur_y, self.cur_theta, self.cur_vel, self.cur_steer]
+    def linearize_dynamics(self, X, U):
+        """Linearize the vehicle dynamics at a given state and input."""
+        v, delta = U
+        theta = X[2]
 
-        self.find_nearest_point()
+        A = np.array([
+            [1, 0, -v * np.sin(theta) * self.dt],
+            [0, 1,  v * np.cos(theta) * self.dt],
+            [0, 0,  1]
+        ])
 
-        throttle, steer, brake = self.mpc_control()
+        B = np.array([
+            [np.cos(theta) * self.dt, 0],
+            [np.sin(theta) * self.dt, 0],
+            [np.tan(delta) * self.dt / self.wheelbase, v * self.dt / (self.wheelbase * np.cos(delta)**2)]
+        ])
 
-        control_msg = Vector3Stamped()
-        control_msg.header.frame_id = "team6"
-        control_msg.vector.x = throttle
-        control_msg.vector.y = steer
-        control_msg.vector.z = brake
+        w = np.array([
+            v * np.cos(theta) * self.dt,
+            v * np.sin(theta) * self.dt,
+            v * np.tan(delta) * self.dt / self.wheelbase
+        ])
 
-        self.pub_msg.publish(control_msg)
-        rospy.loginfo("Publishing control: throttle=%s, steer=%s, brake=%s", throttle, steer, brake)
+        return A, B, w
 
-    def find_nearest_point(self):
-        min_distance = float('inf')
-        for i in range(len(self.x_ref)):
-            distance = ((self.cur_x - self.x_ref[i]) ** 2 + (self.cur_y - self.y_ref[i]) ** 2) ** 0.5
-            if distance < min_distance:
-                min_distance = distance
-                if i == len(self.x_ref) - 1:
-                    i = 0
-                self.Index = i
-                self.nearest_Path = [self.x_ref[self.Index + 1], self.y_ref[self.Index + 1]]
-                self.theta_ref = math.atan2(self.y_ref[self.Index + 1] - self.y_ref[self.Index],
-                                            self.x_ref[self.Index + 1] - self.x_ref[self.Index])
-                break
+    def compute_trajectory(self, x0, X_ref, U_ref):
+        """Compute optimal control inputs using MPC."""
+        def cost(U_flat):
+            U = U_flat.reshape((2, self.Np))
+            X = np.zeros((3, self.Np))
+            X[:, 0] = x0
 
-    def mpc_control(self):
+            J = 0
+            for k in range(self.Np - 1):
+                A, B, w = self.linearize_dynamics(X[:, k], U[:, k])
+                X[:, k + 1] = A @ X[:, k] + B @ U[:, k] + w
 
-        def cost_function(u):
-            throttle, omega = u  
-            x_e = (self.nearest_Path[0] - self.cur_x) * math.cos(self.cur_theta) + (self.nearest_Path[1] - self.cur_y) * math.sin(self.cur_theta)
-            y_e = -(self.nearest_Path[0] - self.cur_x) * math.sin(self.cur_theta) + (self.nearest_Path[1] - self.cur_y) * math.cos(self.cur_theta)
-            theta_e = self.theta_ref - self.cur_theta
+                dx = X[:, k + 1] - X_ref[:, k + 1]
+                du = U[:, k] - U_ref[:, k]
+                J += dx.T @ self.Q @ dx + du.T @ self.R @ du
 
-            vel_cost = (throttle - self.cur_vel)**2
-            steer_cost = omega**2
-            path_tracking_cost = (x_e**2 + y_e**2)
+            return J
 
-            return vel_cost + steer_cost + path_tracking_cost
+        U0 = np.zeros((2, self.Np)).flatten()  # Initial guess
+        bounds = [(self.min_vel, self.max_vel), (self.min_steer_angle, self.max_steer_angle)] * self.Np
 
-        u0 = [1.0, 0.05]
+        result = minimize(cost, U0, bounds=bounds)
+        U_opt = result.x.reshape((2, self.Np))
 
-        result = minimize(cost_function, u0, bounds=[(0, 1), (-1, 1)])
+        return U_opt[:, 0]  # Return the first control input
 
-        throttle, omega = result.x
+    def control(self):
+        """Compute the control inputs using MPC."""
+        nearest_idx = np.argmin(np.hypot(self.x - self.ref[:, 0], self.y - self.ref[:, 1]))
+        X_ref = np.zeros((3, self.Np))
+        U_ref = np.zeros((2, self.Np))
 
-        steer_fake = (math.atan2(1.023 * omega, self.cur_vel) * 180 / math.pi)  # 1.023은 휠베이스
-        steer = -min(20, max(steer_fake, -20)) / 20  # 조향각 제한
+        for i in range(self.Np):
+            idx = (nearest_idx + i) % len(self.ref)
+            X_ref[:2, i] = self.ref[idx]
+            X_ref[2, i] = self.yaw  # Approximation for heading reference
+            U_ref[0, i] = self.target_speed  # Reference velocity
 
-        brake = 0 
-        return throttle, steer, brake
+        x0 = np.array([self.x, self.y, self.yaw])
+        vel, steer = self.compute_trajectory(x0, X_ref, U_ref)
 
-    def main(self):
-        rospy.spin()
+        vel = np.clip(vel, 0, 1)
+        steer = np.clip(steer, self.min_steer_angle, self.max_steer_angle)
+
+        return vel, steer, 0  # No brake logic for now
+
+
+def vehicle_data_callback(data):
+    """ROS callback function for vehicle state."""
+    global controller, control_publisher
+
+    x, y, yaw, speed, steering_angle = data.data[0], data.data[1], data.data[2], data.data[3], data.data[4]
+    controller.update(x, y, yaw, speed, steering_angle)
+
+    throttle, steer, brake = controller.control()
+
+    control_msg = Vector3Stamped()
+    control_msg.header.frame_id = "team6"
+    control_msg.vector.x = throttle
+    control_msg.vector.y = steer
+    control_msg.vector.z = brake
+
+    control_publisher.publish(control_msg)
+
+    rospy.loginfo("Publishing Vector3Stamped: throttle=%s, steer=%s, brake=%s",
+                  control_msg.vector.x, control_msg.vector.y, control_msg.vector.z)
+
+
+def main():
+    """Main function to initialize the node and run the controller."""
+    global controller, control_publisher
+
+    rospy.init_node('mpc_vehicle_control')
+
+    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/reference_path.csv'
+    controller = MPCController(ref_path)
+
+    rospy.Subscriber('/mobile_system_control/ego_vehicle', Float32MultiArray, vehicle_data_callback)
+    control_publisher = rospy.Publisher('/mobile_system_control/control_msg', Vector3Stamped, queue_size=10)
+
+    rospy.spin()
+
 
 if __name__ == '__main__':
-    rospy.init_node('mpc_control_node', anonymous=False)
-    node = MPCNode()
-    node.main()
+    main()
