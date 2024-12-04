@@ -15,14 +15,14 @@ class MPCController:
         self.wheelbase = 1.023
         self.dt = 0.1  # Time step
         self.Np = 10  # Prediction horizon
-        self.max_steer_angle = np.pi / 4
-        self.min_steer_angle = -np.pi / 4
-        self.max_vel = 4.0
+        self.max_steer_angle = np.deg2rad(20)
+        self.min_steer_angle = -np.deg2rad(20)
+        self.max_vel = 20.0/3.6
         self.min_vel = 0.0
 
         # MPC cost matrices
-        self.Q = np.diag([1, 1, 10])  # State cost
-        self.R = np.diag([10, 0.5])   # Input cost
+        self.Q = np.diag([1, 1, 10])  # State cost x,y,yaw 오차 가중치
+        self.R = np.diag([10, 0.5])   # Input cost vel,steer 입력 가중치
 
         # Current state
         self.x = 0
