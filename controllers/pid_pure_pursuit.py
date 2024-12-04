@@ -53,7 +53,9 @@ class Controller(object):
     def control_steer(self):
         nearest_idx = np.argmin(np.hypot(self.x - self.ref[:,0], self.y-self.ref[:,1]))
         look_ahead_idx = (nearest_idx + self.look_ahead_dist) % len(self.ref)
-        look_ahead_point = self.ref[look_ahead_idx]-np.array([self.x, self.y])
+        look_ahead_point = self.ref[look_ahead_idx, :2] - np.array([self.x, self.y])
+
+        #look_ahead_point = self.ref[look_ahead_idx]-np.array([self.x, self.y])
             
         rotation_matrix = np.array([[np.cos(self.yaw), np.sin(self.yaw)], [-np.sin(self.yaw), np.cos(self.yaw)]])
         x,y = np.matmul(rotation_matrix, look_ahead_point)
