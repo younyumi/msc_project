@@ -167,7 +167,7 @@ def main():
 
     rospy.init_node('mpcpurepursuit_vehicle_control')
 
-    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/reference_path.csv'
+    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/ref_path2.csv'
     controller = MPCPurePursuitController(ref_path)
 
     rospy.Subscriber('/mobile_system_control/ego_vehicle', Float32MultiArray, vehicle_data_callback)

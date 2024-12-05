@@ -94,6 +94,8 @@ class MPCController:
     def control(self):
         """Compute the control inputs using MPC."""
         nearest_idx = np.argmin(np.hypot(self.x - self.ref[:, 0], self.y - self.ref[:, 1]))
+
+        #nearest_idx = np.argmin(np.hypot(self.x - self.ref[:, 0], self.y - self.ref[:, 1]))
         
         X_ref = np.zeros((3, self.Np))
         U_ref = np.zeros((2, self.Np))
@@ -146,7 +148,7 @@ def main():
 
     rospy.init_node('mpc_vehicle_control')
 
-    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/reference_path.csv'
+    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/ref_path2.csv'
     controller = MPCController(ref_path)
 
     rospy.Subscriber('/mobile_system_control/ego_vehicle', Float32MultiArray, vehicle_data_callback)
