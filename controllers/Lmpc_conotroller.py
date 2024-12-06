@@ -9,12 +9,11 @@ from geometry_msgs.msg import Vector3Stamped
 
 class MPCController:
     def __init__(self, ref_path, N=10, dt=0.1):
-        #self.ref = pd.read_csv(ref_path, header=None).values
         self.ref = pd.read_csv(ref_path, header=None).iloc[:, :2].values.astype(float)
 
         # Vehicle parameters
-        self.N = 10  
-        self.dt = 0.1 
+        self.N = N
+        self.dt = dt
         self.wheelbase = 1.023
         self.max_steer_angle = np.deg2rad(20.0)
         self.min_steer_angle = -np.deg2rad(20.0)
@@ -22,8 +21,8 @@ class MPCController:
         self.min_speed = 0.0
 
         # Cost weights
-        self.Q = np.diag([1, 1, 10])  # State cost x, y, yaw
-        self.R = np.diag([0.1, 10])  # Input cost throttle, steering
+        self.Q = np.diag([1, 1, 20])  # State cost x, y, yaw
+        self.R = np.diag([0.1, 0.2])  # Input cost throttle, steering
 
         # Vehicle state
         self.x = 0
@@ -31,6 +30,7 @@ class MPCController:
         self.yaw = 0 
         self.speed = 0
         self.steering_angle = 0
+        self.nearest_idx = 0  # Initialize nearest_idx
 
     def update(self, x, y, yaw, speed, steering_angle):
         """Update the current state of the vehicle."""
@@ -39,6 +39,17 @@ class MPCController:
         self.yaw = yaw
         self.speed = speed
         self.steering_angle = steering_angle
+
+        # Update nearest_idx dynamically
+        distances = np.hypot(self.ref[:, 0] - self.x, self.ref[:, 1] - self.y)
+        new_nearest_idx = np.argmin(distances)
+
+        # Ensure progress along the path
+        if new_nearest_idx > self.nearest_idx or \
+           distances[new_nearest_idx] > distances[self.nearest_idx]:
+            self.nearest_idx = new_nearest_idx
+            
+        rospy.loginfo(new_nearest_idx)
 
     def linearize_dynamics(self, X, U):
         """Linearize the vehicle dynamics at a given state and input."""
@@ -70,13 +81,13 @@ class MPCController:
 
     def control(self):
         """Compute the control inputs using linearized MPC."""
-        nearest_idx = np.argmin(np.hypot(self.x - self.ref[:, 0], self.y - self.ref[:, 1]))
         X_ref = np.zeros((3, self.N))
         U_ref = np.zeros((2, self.N))
+        
 
         # Generate reference trajectory for the prediction horizon
         for i in range(self.N):
-            idx = (nearest_idx + i) % len(self.ref)
+            idx = (self.nearest_idx + i) % len(self.ref)
             X_ref[:2, i] = self.ref[idx]
 
             if idx + 1 < len(self.ref):
@@ -122,6 +133,7 @@ class MPCController:
             throttle, steer = 0.0, 0.0
 
         return throttle, steer, 0  # No braking logic
+
 
 def vehicle_data_callback(data):
     """ROS callback function for vehicle state."""
