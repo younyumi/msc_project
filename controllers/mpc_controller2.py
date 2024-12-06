@@ -9,7 +9,9 @@ from geometry_msgs.msg import Vector3Stamped
 class MPCController:
     def __init__(self, ref_path):
         # Load reference path
-        self.ref = pd.read_csv(ref_path, header=None).values
+        #self.ref = pd.read_csv(ref_path, header=None).values
+        self.ref = pd.read_csv(ref_path, header=None).iloc[:, :2].values.astype(float)
+        
 
         # Vehicle parameters
         self.wheelbase = 1.023
