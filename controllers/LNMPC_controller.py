@@ -45,7 +45,7 @@ class MPCNode:
         self.state = State()
 
         # 경로 로드
-        self.ref_path = pd.read_csv('/home/sim/catkin_ws/src/purepursuit/src/Ref2.csv', names=['x', 'y'], header=None)
+        self.ref_path = pd.read_csv('/home/yumi/catkin_ws/src/my_msc_package/src/reference_path2.csv', names=['x', 'y'], header=None)
         self.cx = self.ref_path['x'].values
         self.cy = self.ref_path['y'].values
         self.cyaw = self.calculate_yaw(self.cx, self.cy)

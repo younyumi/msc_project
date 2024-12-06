@@ -132,7 +132,7 @@ def main():
     rospy.init_node('carla_vehicle_control')
     rospy.loginfo("Starting MPC Controller Node")
 
-    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/reference_path.csv'
+    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/reference_path2.csv'
     controller = MPCController(ref_path)
 
     rospy.Subscriber('/mobile_system_control/ego_vehicle', Float32MultiArray, vehicle_data_callback)

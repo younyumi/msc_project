@@ -9,7 +9,8 @@ from geometry_msgs.msg import Vector3Stamped
 
 class MPCController:
     def __init__(self, ref_path, N=10, dt=0.1):
-        self.ref = pd.read_csv(ref_path, header=None).values
+        #self.ref = pd.read_csv(ref_path, header=None).values
+        self.ref = pd.read_csv(ref_path, header=None).iloc[:, :2].values.astype(float)
 
         # Vehicle parameters
         self.N = 10  
@@ -153,7 +154,7 @@ def main():
 
     rospy.init_node('mpc_vehicle_control')
 
-    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/reference_path.csv'
+    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/reference_path2.csv'
     controller = MPCController(ref_path)
 
     rospy.Subscriber('/mobile_system_control/ego_vehicle', Float32MultiArray, vehicle_data_callback)
