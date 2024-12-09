@@ -96,7 +96,7 @@ def main():
     rospy.init_node('carla_vehicle_control')
     print("hello")
     
-    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/reference_path.csv'
+    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/reference_path2.csv'
     controller = Controller(ref_path)
         
     rospy.Subscriber('/mobile_system_control/ego_vehicle',Float32MultiArray, vehicle_data_callback)

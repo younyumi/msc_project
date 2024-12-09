@@ -1,3 +1,9 @@
+# #kanayamaController에서 지금, 경로 오차를 바탕으로 steering을 계산. 덕분에 경로 추종은 잘한다. 
+# throttle,brake는 각각 1과 0으로 설정되어 있음. 이는 시간 단축을 위해, 경로 추종만 잘 된다면 최고. 
+# 경로 추종 성능 향상 -> kx,kw 증가해볼 수 있음.
+# 동적 lookaheaddistance 설정 추가. (속도,곡률에 따라 변화하는) 
+
+
 #!/usr/bin/env python3
 import rospy
 import math
@@ -29,6 +35,7 @@ class PathTrackingNode:
         df = pd.read_csv(csv_file_Path)
         matrix = df.to_numpy()
 
+        # 경로 정보 저장
         for i in range(len(matrix)):
             x_Point = matrix[i][0]
             y_Point = matrix[i][1]
@@ -43,7 +50,6 @@ class PathTrackingNode:
         self.cur_steer = msg.data[4]
         self.cur_pos = [self.cur_x, self.cur_y, self.cur_theta, self.cur_vel, self.cur_steer]
 
-        # 목표 경로에서 가장 가까운 지점 찾기
         self.find_nearest_point()
 
         throttle, steer, brake = self.kanayama_control()
@@ -59,46 +65,35 @@ class PathTrackingNode:
 
     def find_nearest_point(self):
         self.min_distance = float('inf')
-        self.Index = 0
-        
-        for i, (x_ref, y_ref) in enumerate(zip(self.x_ref, self.y_ref)):
-            distance = ((self.cur_x - x_ref) ** 2 + (self.cur_y - y_ref) ** 2) ** 0.5
+
+        # 경로 곡률 기반 동적 look-ahead 거리 설정
+        def calculate_curvature(idx):
+            if idx + 2 < len(self.x_ref):
+                dx1 = self.x_ref[idx + 1] - self.x_ref[idx]
+                dy1 = self.y_ref[idx + 1] - self.y_ref[idx]
+                dx2 = self.x_ref[idx + 2] - self.x_ref[idx + 1]
+                dy2 = self.y_ref[idx + 2] - self.y_ref[idx + 1]
+                curvature = abs(dx1 * dy2 - dy1 * dx2) / ((dx1**2 + dy1**2)**1.5 + 1e-6)
+                return curvature
+            return 0
+
+        for i in range(len(self.x_ref)):
+            distance = ((self.cur_x - self.x_ref[i]) ** 2 + (self.cur_y - self.y_ref[i]) ** 2) ** 0.5
             if distance < self.min_distance:
                 self.min_distance = distance
-                self.Index = i
-        next_index = (self.Index + 1) % len(self.x_ref)
-        self.nearest_Path = [self.x_ref[next_index], self.y_ref[next_index]]
-        self.theta_ref = math.atan2(
-            self.y_ref[next_index] - self.y_ref[self.Index],
-            self.x_ref[next_index] - self.x_ref[self.Index]
-        )
-        
-    def adjust_target_speed(self, steer):
-        max_speed = 20 /3.6
-        min_speed = 15 /3.6
-        
-        if abs(steer) > 0.8:
-            return min_speed
-        elif abs(steer) > 0.5:
-            return (max_speed + min_speed) / 2
-        else:
-            return max_speed
 
-        
-    def dynamic_speed_control(self, target_speed):
-        speed_error = target_speed - self.cur_vel
-        if speed_error > 0:
-            throttle = min(speed_error / target_speed, 1.0)
-            brake = 0
-        else:
-            throttle = 0
-            brake = min(-speed_error / target_speed, 1.0)
-        
-        return throttle, brake
-        
+                curvature = calculate_curvature(i)
+                look_ahead_distance = max(4, self.cur_vel * 0.7 * (1 / (1 + curvature * 5)))  # 곡률 기반 look-ahead
+                if i + 1 + int(look_ahead_distance) < len(self.x_ref):
+                    self.Index = i
+                    self.nearest_Path = [self.x_ref[self.Index + 1 + int(look_ahead_distance)], 
+                                         self.y_ref[self.Index + 1 + int(look_ahead_distance)]]
+                    self.theta_ref = math.atan2(self.y_ref[self.Index + 1] - self.y_ref[self.Index],
+                                                self.x_ref[self.Index + 1] - self.x_ref[self.Index])
+                    break
 
     def kanayama_control(self):
-        # Kanayama 제어기 로직
+        # Kanayama 제어기 
         x_e = (self.nearest_Path[0] - self.cur_x) * math.cos(self.cur_theta) + (self.nearest_Path[1] - self.cur_y) * math.sin(self.cur_theta)
         y_e = -(self.nearest_Path[0] - self.cur_x) * math.sin(self.cur_theta) + (self.nearest_Path[1] - self.cur_y) * math.cos(self.cur_theta)
         theta_e = self.theta_ref - self.cur_theta
@@ -118,11 +113,8 @@ class PathTrackingNode:
     
         throttle = 1  
         brake = 0  
-        
-        if self.cur_vel ==0:
-            steer_fake=0
-        else:
-            steer_fake = (math.atan2(1.023 * omega, self.cur_vel) * 180 / math.pi)  
+
+        steer_fake = (math.atan2(1.023 * omega, self.cur_vel) * 180 / math.pi)  
         steer = -min(20, max(steer_fake, -20)) / 20  
 
         return throttle, steer, brake

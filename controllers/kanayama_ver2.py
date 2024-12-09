@@ -25,7 +25,7 @@ class PathTrackingNode:
         self.nearest_Path = None
         self.Index = 0
 
-        csv_file_Path = '/home/yumi/catkin_ws/src/my_msc_package/src/reference_path2.csv'
+        csv_file_Path = '/home/yumi/catkin_ws/src/my_msc_package/src/densified_shortest_path.csv'
         df = pd.read_csv(csv_file_Path)
         matrix = df.to_numpy()
 
@@ -74,8 +74,8 @@ class PathTrackingNode:
         )
 
     def adjust_target_speed(self, steer):
-        max_speed = 20 / 3.6
-        min_speed = 10 / 3.6
+        max_speed = 40 / 3.6
+        min_speed = 20 / 3.6
         
         if abs(steer) > 0.8:
             return min_speed
@@ -87,7 +87,9 @@ class PathTrackingNode:
     def dynamic_speed_control(self, target_speed):
         speed_error = target_speed - self.cur_vel
         if speed_error > 0:
-            throttle = min(speed_error / target_speed, 1.0)
+            #throttle = min(speed_error / target_speed, 1.0)
+            throttle = min(speed_error / target_speed * 1.5, 1.0)  # 비율 증가
+
             brake = 0
         else:
             throttle = 0
@@ -101,7 +103,7 @@ class PathTrackingNode:
         y_e = -(self.nearest_Path[0] - self.cur_x) * math.sin(self.cur_theta) + (self.nearest_Path[1] - self.cur_y) * math.cos(self.cur_theta)
         theta_e = (self.theta_ref - self.cur_theta + math.pi) % (2 * math.pi) - math.pi
 
-        v_ref = 20 * 1000 / 3600  
+        v_ref = 40 * 1000 / 3600  
         w_ref = 0.05  
         kx = 4  
         ky = 0.3
