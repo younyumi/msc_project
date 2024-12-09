@@ -93,6 +93,13 @@ class MPCController:
 
         alpha = 0.6  # Weight for combining MPC and Pure Pursuit
         final_steering = alpha * mpc_steer + (1 - alpha) * pure_pursuit_steer
+        
+        #조향각 확인
+        # rospy.loginfo("MPC Steering Angle (rad): %.4f", mpc_steer)
+        # rospy.loginfo("Pure Pursuit Steering Angle (rad): %.4f", pure_pursuit_steer)
+        # rospy.loginfo("Final Steering Angle (rad): %.4f", final_steering)
+        #rospy.loginfo("======================")
+
 
         return throttle, final_steering, 0  # No braking logic
 
