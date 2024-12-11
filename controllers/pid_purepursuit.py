@@ -11,7 +11,7 @@ class Controller(object):
         self.max_steer_angle=np.deg2rad(30.0) 
         self.wheelbase = 1.023
         self.target_speed = 20.0/3.6
-        self.look_ahead_dist = 5
+        self.look_ahead_dist = 10
         self.kp = 1.5
         self.kd = 0.3
         self.ki = 0.03

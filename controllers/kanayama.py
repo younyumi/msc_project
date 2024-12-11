@@ -29,6 +29,7 @@ class PathTrackingNode:
         df = pd.read_csv(csv_file_Path)
         matrix = df.to_numpy()
 
+        # 경로 정보 저장
         for i in range(len(matrix)):
             x_Point = matrix[i][0]
             y_Point = matrix[i][1]
@@ -58,44 +59,19 @@ class PathTrackingNode:
         rospy.loginfo("Publishing control: throttle=%s, steer=%s, brake=%s", throttle, steer, brake)
 
     def find_nearest_point(self):
+        # 가장 가까운 경로 지점 찾기
         self.min_distance = float('inf')
-        self.Index = 0
-        
-        for i, (x_ref, y_ref) in enumerate(zip(self.x_ref, self.y_ref)):
-            distance = ((self.cur_x - x_ref) ** 2 + (self.cur_y - y_ref) ** 2) ** 0.5
+        for i in range(len(self.x_ref)):
+            distance = ((self.cur_x - self.x_ref[i]) ** 2 + (self.cur_y - self.y_ref[i]) ** 2) ** 0.5
             if distance < self.min_distance:
                 self.min_distance = distance
+                if i == len(self.x_ref) - 1:
+                    i = 0
                 self.Index = i
-        next_index = (self.Index + 1) % len(self.x_ref)
-        self.nearest_Path = [self.x_ref[next_index], self.y_ref[next_index]]
-        self.theta_ref = math.atan2(
-            self.y_ref[next_index] - self.y_ref[self.Index],
-            self.x_ref[next_index] - self.x_ref[self.Index]
-        )
-        
-    def adjust_target_speed(self, steer):
-        max_speed = 20 /3.6
-        min_speed = 15 /3.6
-        
-        if abs(steer) > 0.8:
-            return min_speed
-        elif abs(steer) > 0.5:
-            return (max_speed + min_speed) / 2
-        else:
-            return max_speed
-
-        
-    def dynamic_speed_control(self, target_speed):
-        speed_error = target_speed - self.cur_vel
-        if speed_error > 0:
-            throttle = min(speed_error / target_speed, 1.0)
-            brake = 0
-        else:
-            throttle = 0
-            brake = min(-speed_error / target_speed, 1.0)
-        
-        return throttle, brake
-        
+                self.nearest_Path = [self.x_ref[self.Index + 1], self.y_ref[self.Index + 1]]
+                self.theta_ref = math.atan2(self.y_ref[self.Index + 1] - self.y_ref[self.Index],
+                                            self.x_ref[self.Index + 1] - self.x_ref[self.Index])
+                break
 
     def kanayama_control(self):
         # Kanayama 제어기 로직
@@ -118,11 +94,8 @@ class PathTrackingNode:
     
         throttle = 1  
         brake = 0  
-        
-        if self.cur_vel ==0:
-            steer_fake=0
-        else:
-            steer_fake = (math.atan2(1.023 * omega, self.cur_vel) * 180 / math.pi)  
+
+        steer_fake = (math.atan2(1.023 * omega, self.cur_vel) * 180 / math.pi)  
         steer = -min(20, max(steer_fake, -20)) / 20  
 
         return throttle, steer, brake
