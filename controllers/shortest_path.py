@@ -119,7 +119,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 # 데이터 로드 - 도로 중심선 좌표가 포함된 CSV 파일 로드
-path_reference = pd.read_csv('/home/yumi/catkin_ws/src/my_msc_package/src/final_path.csv', delimiter=',')
+path_reference = pd.read_csv('/home/yumi/catkin_ws/src/my_msc_package/src/reference_path_short.csv', delimiter=',')
 
 # 데이터 전처리
 path_reference = path_reference.replace({',': ''}, regex=True)
@@ -225,6 +225,6 @@ shortest_path_df = pd.DataFrame({
 })
 
 # 저장 경로 설정 (원본과 동일한 형식)
-output_path = '/home/yumi/catkin_ws/src/my_msc_package/src/shortest_path_final.csv'
+output_path = '/home/yumi/catkin_ws/src/my_msc_package/src/shortest_path_final3.csv'
 shortest_path_df.to_csv(output_path, sep=',', index=False, header=False)
 print(f"최단 경로가 {output_path}에 저장되었습니다.")

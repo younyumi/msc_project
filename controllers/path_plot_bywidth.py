@@ -20,8 +20,9 @@ waypoint_x = waypoint_data['x'].values
 waypoint_y = waypoint_data['y'].values
 waypoint_z = waypoint_data['z'].values
 
-# 도로 폭 (양쪽으로 4m씩)
-road_half_width = 1.5
+# 도로 폭 설정
+road_half_width = np.full_like(road_x, 8.0)  # 기본 도로폭: 8m
+road_half_width[318:563] = 3.0  # 인덱스 318부터 562까지 도로폭: 3m
 
 # 도로의 법선 벡터 계산
 dx = np.gradient(road_x)  
@@ -39,9 +40,6 @@ right_y = road_y - normal_y * road_half_width
 # 3D 플롯 생성
 fig = plt.figure(figsize=(12, 10))
 ax = fig.add_subplot(111, projection='3d')
-
-# 도로 중심선 플롯
-#ax.plot(road_x, road_y, road_z, label='Road Center Line', color='blue', linewidth=2)
 
 # 도로 경계 플롯
 ax.plot(left_x, left_y, road_z, label='Left Road Boundary', color='red', linestyle='--', linewidth=1)

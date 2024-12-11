@@ -98,7 +98,7 @@ def filter_outliers(curvature):
     return filtered_curvature
 
 # Load curvature data
-file_path = '/home/yumi/catkin_ws/src/my_msc_package/src/reference_path.csv'
+file_path = '/home/yumi/catkin_ws/src/my_msc_package/src/reference_path_short.csv'
 x, y, curvature = calculate_curvature(file_path)
 
 # Filter outliers
@@ -126,9 +126,9 @@ plt.figure(figsize=(10, 6))
 plt.plot(x, y, label='Path', color='blue')
 sc = plt.scatter(x, y, c=filtered_curvature, cmap='jet', label='Curvature')
 plt.colorbar(sc, label='Curvature')
-plt.title('Path with Curvature')
+plt.title('Long Path Curvature')
 plt.xlabel('X')
 plt.ylabel('Y')
-plt.legend()
+plt.legend() 
 plt.grid(True)
 plt.show()
