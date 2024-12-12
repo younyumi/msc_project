@@ -20,9 +20,9 @@ class Controller(object):
         }
 
     def get_paras_for_section(self, idx):
-        if 579 <= idx <= 696:  # Section 1: 최대 곡률 구간
+        if 678 <= idx <= 696:  # Section 1: 최대 곡률 구간
             return self.paras_by_section["section_1"]
-        elif 318 <= idx < 562:  # Section 2: 곡선 구간
+        elif 267 <= idx < 585:  # Section 2: 곡선 구간
             return self.paras_by_section["section_2"]
         else:  # 나머지 구간
             return {"look_ahead_dist": 10, "kp": 1.5, "kd": 0.3, "ki": 0.03}

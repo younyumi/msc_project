@@ -28,6 +28,6 @@ def calculate_total_path_length(csv_file_path):
     return total_length
 
 # Example usage
-csv_file_path = '/home/yumi/catkin_ws/src/my_msc_package/src/reference_path_short.csv'  # Replace with your CSV file path
+csv_file_path = '/home/yumi/catkin_ws/src/my_msc_package/src/ref_short.csv'  # Replace with your CSV file path
 total_length = calculate_total_path_length(csv_file_path)
 print(f"Long Path Length: {total_length:.2f} m")
