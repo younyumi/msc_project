@@ -16,7 +16,7 @@ class Controller(object):
         
         self.paras_by_section = {
             "section_1": {"look_ahead_dist": 5, "kp": 2.0, "kd": 0.25, "ki": 0.01},  # 최대 곡률 구간
-            "section_2": {"look_ahead_dist": 7, "kp": 1.5, "kd": 0.2, "ki": 0.02},  # 곡선 구간
+            "section_2": {"look_ahead_dist": 7, "kp": 1.5, "kd": 0.2, "ki": 0.02},  # 좁은 폭 곡선 구간
         }
 
     def get_paras_for_section(self, idx):
