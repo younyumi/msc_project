@@ -3,8 +3,8 @@ import numpy as np
 from scipy.interpolate import CubicSpline
 
 # CSV 파일 경로 설정
-input_file_path = '/home/yumi/catkin_ws/src/my_msc_package/src/shortest_path3.csv' # 입력 파일 경로
-output_file_path = 'densified_shortest_path.csv'  # 출력 파일 경로
+input_file_path = '/home/yumi/catkin_ws/src/my_msc_package/src/optimize3.csv' # 입력 파일 경로
+output_file_path = 'optimize_short3.csv'  # 출력 파일 경로
 
 # CSV 파일 읽기
 waypoints = pd.read_csv(input_file_path, header=None)
