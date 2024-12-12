@@ -10,7 +10,7 @@ class Controller(object):
         self.ref=pd.read_csv(ref_path, header=None).values
         self.max_steer_angle=np.deg2rad(30.0) 
         self.wheelbase = 1.023
-        self.target_speed = 30.0/3.6
+        self.target_speed = 20.0/3.6
         self.look_ahead_dist = 10
         self.kp = 1.5
         self.kd = 0.3
@@ -89,7 +89,7 @@ def main():
     rospy.init_node('carla_vehicle_control')
     print("hello")
     
-    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/opt_short.csv'
+    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/opt_short_modify.csv'
     controller = Controller(ref_path)
         
     rospy.Subscriber('/mobile_system_control/ego_vehicle',Float32MultiArray, vehicle_data_callback)

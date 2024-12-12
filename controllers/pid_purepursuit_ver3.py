@@ -96,7 +96,7 @@ def main():
     global controller, control_publisher
 
     rospy.init_node('carla_vehicle_control')
-    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/densified_shortest_path.csv'
+    ref_path = '/home/yumi/catkin_ws/src/my_msc_package/src/opt_short_modify.csv'
     controller = Controller(ref_path)
 
     rospy.Subscriber('/mobile_system_control/ego_vehicle', Float32MultiArray, vehicle_data_callback)
