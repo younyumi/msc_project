@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # CSV 파일 경로
-road_file_path = '/home/yumi/catkin_ws/src/my_msc_package/src/ref_short.csv'  # 도로 시각화를 위한 파일
-waypoint_file_path = '/home/yumi/catkin_ws/src/my_msc_package/src/opt_short.csv'  # 웨이포인트 시각화를 위한 파일
+road_file_path = '/home/yumi/catkin_ws/src/my_msc_package/src/ref_long.csv'  # 도로 시각화를 위한 파일
+waypoint_file_path = '/home/yumi/catkin_ws/src/my_msc_package/src/opt_long.csv'  # 웨이포인트 시각화를 위한 파일
 
 # 도로 데이터 읽기
 road_data = pd.read_csv(road_file_path, header=None)
@@ -21,7 +21,7 @@ waypoint_y = waypoint_data['y'].values
 waypoint_z = waypoint_data['z'].values
 
 # 도로 폭 (양쪽으로 4m씩)
-road_half_width = 1.5
+road_half_width = 4
 
 # 도로의 법선 벡터 계산
 dx = np.gradient(road_x)  

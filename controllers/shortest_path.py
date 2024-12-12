@@ -119,7 +119,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 # 데이터 로드 - 도로 중심선 좌표가 포함된 CSV 파일 로드
-path_reference = pd.read_csv('/home/yumi/catkin_ws/src/my_msc_package/src/reference_path_short.csv', delimiter=',')
+path_reference = pd.read_csv('/home/yumi/catkin_ws/src/my_msc_package/src/ref_short.csv', delimiter=',')
 
 # 데이터 전처리
 path_reference = path_reference.replace({',': ''}, regex=True)
@@ -130,11 +130,11 @@ y_coords = path_reference['y'].astype(float).to_numpy()
 z_coords = path_reference['z'].astype(float).to_numpy()
 
 # 도로의 양끝 경계 계산 (도로 폭: 8m)
-road_width = 8  # 도로 폭
+road_width = 3  # 도로 폭
 offset = road_width / 2  # 도로 중심으로부터 양쪽 경계까지의 거리
 
 # 차량 폭 고려 - 도로 유효 폭 조정
-vehicle_width = 6  # 차량 폭 (1.2m)
+vehicle_width = 1.5  # 차량 폭 (1.2m)
 usable_road_width = road_width - vehicle_width  # 차량 폭을 고려한 유효 도로 폭
 adjusted_offset = usable_road_width / 2  # 유효 도로 중심으로부터 경계까지의 거리
 
@@ -225,6 +225,6 @@ shortest_path_df = pd.DataFrame({
 })
 
 # 저장 경로 설정 (원본과 동일한 형식)
-output_path = '/home/yumi/catkin_ws/src/my_msc_package/src/shortest_path_final3.csv'
+output_path = '/home/yumi/catkin_ws/src/my_msc_package/src/opt_short2.csv'
 shortest_path_df.to_csv(output_path, sep=',', index=False, header=False)
 print(f"최단 경로가 {output_path}에 저장되었습니다.")
