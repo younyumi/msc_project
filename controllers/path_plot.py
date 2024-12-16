@@ -4,7 +4,7 @@ import numpy as np
 
 # CSV 파일 경로
 road_file_path = '/home/yumi/catkin_ws/src/my_msc_package/src/ref_short.csv'  # 도로 시각화를 위한 파일
-waypoint_file_path = '/home/yumi/catkin_ws/src/my_msc_package/src/optimize_short2.csv'  # 웨이포인트 시각화를 위한 파일
+waypoint_file_path = '/home/yumi/catkin_ws/src/my_msc_package/src/final_path2.csv'  # 웨이포인트 시각화를 위한 파일
 
 # 도로 데이터 읽기
 road_data = pd.read_csv(road_file_path, header=None)

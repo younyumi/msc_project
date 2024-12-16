@@ -25,7 +25,12 @@ class PathTrackingNode:
         self.nearest_Path = None
         self.Index = 0
 
-        csv_file_Path = '/home/yumi/catkin_ws/src/my_msc_package/src/optimize_short2.csv'
+        #csv_file_Path = '/home/yumi/catkin_ws/src/my_msc_package/src/optimize_short2.csv'
+        #csv_file_Path = '/home/yumi/catkin_ws/src/my_msc_package/src/opt_short_modify.csv'
+        csv_file_Path = '/home/yumi/catkin_ws/src/my_msc_package/src/final_path2.csv'
+        
+        
+        
         df = pd.read_csv(csv_file_Path)
         matrix = df.to_numpy()
 
